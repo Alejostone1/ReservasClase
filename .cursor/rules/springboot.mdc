@@ -1,0 +1,141 @@
+---
+description: Convenciones Java 25 y Spring Boot para reservation-backend (ReservaT)
+alwaysApply: true
+---
+
+# Spring Boot — ReservaT (reservation-backend)
+
+Stack: **Java 25**, **Spring Boot 4.x**, **Spring Data JPA**, **PostgreSQL**, **springdoc-openapi**. Código del backend en `reservation-backend/`.
+
+## Idioma y nombres
+
+- Clases, métodos, atributos, paquetes (salvo el base existente), constantes, enums y records: **inglés** (`ReservationService`, `findById`, `customerEmail`).
+- Comentarios Javadoc: inglés, frases completas.
+- Mensajes de API expuestos al cliente: según contrato del producto (pueden ser español si el dominio lo define).
+
+## Javadoc
+
+Todo **método público** (clases, interfaces, records con métodos públicos custom) debe tener Javadoc actualizado al cambiar firma o comportamiento.
+
+```java
+/**
+ * Returns the reservation for the given identifier.
+ *
+ * @param id the reservation primary key
+ * @return the reservation data
+ * @throws ReservationNotFoundException if no reservation exists for {@code id}
+ */
+public ReservationResponse findById(Long id);
+```
+
+- Documentar `@param`, `@return`, `@throws` cuando aplique.
+- No documentar getters triviales generados por records salvo que encapsulen lógica.
+
+## DTOs con records
+
+- Request/response de API: **`record`** en `dto.request` / `dto.response`.
+- Validación: anotaciones Jakarta (`@NotNull`, `@Size`, …) en componentes del record.
+- Inmutables; sin setters. Nombres descriptivos: `CreateReservationRequest`, `ReservationResponse`.
+- No usar records como entidades JPA; las entidades van en `entity`.
+
+```java
+public record CreateReservationRequest(
+        @NotNull Long tableId,
+        @NotNull @FutureOrPresent LocalDateTime startTime,
+        @Min(1) int guestCount
+) {}
+```
+
+## Arquitectura en capas
+
+Flujo: **Controller → Service → Repository → Entity**. Sin lógica de negocio en controllers ni acceso directo a repositories desde controllers.
+
+- **Controller**: HTTP, validación de entrada (`@Valid`), mapeo a DTO, códigos de estado.
+- **Service**: reglas de negocio, transacciones (`@Transactional` en implementación).
+- **Repository**: interfaces `JpaRepository` / queries.
+- **Entity**: modelo de persistencia JPA.
+- **Exception**: excepciones de dominio + `@RestControllerAdvice` para respuestas de error uniformes.
+- **Config**: beans, CORS, OpenAPI, seguridad.
+- **Mapper** (opcional): conversión Entity ↔ DTO cuando no baste con métodos estáticos pequeños en el service.
+
+## Estructura del proyecto
+
+```
+ReservaT/
+└── reservation-backend/
+    ├── pom.xml
+    ├── src/main/java/com/juniorstone/reservation_backend/
+    │   ├── ReservationBackendApplication.java
+    │   ├── config/                 # @Configuration, OpenAPI, beans
+    │   ├── controller/             # @RestController
+    │   ├── dto/
+    │   │   ├── request/            # records de entrada
+    │   │   └── response/           # records de salida
+    │   ├── entity/                 # @Entity JPA
+    │   ├── repository/             # interfaces Spring Data
+    │   ├── service/                # interfaces de negocio (opcional)
+    │   │   └── impl/               # @Service implementaciones
+    │   ├── mapper/                 # mapeos Entity ↔ DTO (opcional)
+    │   ├── exception/              # excepciones + @RestControllerAdvice
+    │   └── util/                   # helpers sin estado (uso moderado)
+    ├── src/main/resources/
+    │   ├── application.properties  # o application.yml / perfiles
+    │   └── db/migration/           # Flyway/Liquibase si se añade
+    └── src/test/java/com/juniorstone/reservation_backend/
+        ├── ReservationBackendApplicationTests.java
+        ├── controller/             # @WebMvcTest
+        ├── service/                  # tests unitarios
+        └── repository/             # @DataJpaTest
+```
+
+Paquete base: `com.juniorstone.reservation_backend`. Nuevas clases bajo los subpaquetes anteriores, no en el raíz salvo la aplicación.
+
+## Java 25 y Spring — buenas prácticas
+
+- **Inyección por constructor**; campos `final`. Evitar `@Autowired` en campos.
+- Preferir **interfaces** de servicio cuando haya más de una implementación o para facilitar tests.
+- REST: `@RestController`, `@RequestMapping` a nivel de clase, `ResponseEntity<T>` cuando el status varíe.
+- Persistencia: entidades con `@Entity`, `@Table`, relaciones explícitas; IDs con `@GeneratedValue`. Repositorios `extends JpaRepository<Entity, Id>`.
+- Transacciones: `@Transactional` en **service** (lectura `readOnly = true` cuando corresponda).
+- Excepciones: no capturar genéricamente; lanzar excepciones de dominio y traducirlas en `@RestControllerAdvice`.
+- Configuración externa en `application.properties` / perfiles (`application-dev.properties`); sin secretos en código.
+- OpenAPI: documentar endpoints con anotaciones springdoc donde aporte valor al contrato.
+- Tests: JUnit 5; `@WebMvcTest` controllers, `@DataJpaTest` repositories, `@SpringBootTest` integración cuando haga falta.
+- Usar características modernas con criterio: `var` solo cuando el tipo sea obvio; pattern matching en `switch`; **no** usar preview features sin acuerdo del equipo.
+
+## Qué evitar
+
+- Lógica de negocio en controllers o entities (más allá de callbacks JPA justificados).
+- DTOs mutables (`class` con setters) para API.
+- `Optional` como tipo de campo en entidades JPA o en JSON de respuesta.
+- Exponer entidades JPA directamente en la API.
+- Métodos públicos sin Javadoc.
+- Nombres en español en código Java.
+
+## Ejemplo de capa REST
+
+```java
+@RestController
+@RequestMapping("/api/v1/reservations")
+public class ReservationController {
+
+    private final ReservationService reservationService;
+
+    public ReservationController(ReservationService reservationService) {
+        this.reservationService = reservationService;
+    }
+
+    /**
+     * Creates a new reservation from the request body.
+     *
+     * @param request validated reservation data
+     * @return the created reservation
+     */
+    @PostMapping
+    public ResponseEntity<ReservationResponse> create(
+            @Valid @RequestBody CreateReservationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reservationService.create(request));
+    }
+}
+```
