@@ -1,6 +1,8 @@
 # Build
 **/target/
 **/build/
+**/node_modules/
+**/dist/
 
 # IDE
 .idea/

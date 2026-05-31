@@ -7,7 +7,7 @@ import com.juniorstone.reservation_backend.entity.ReservationStatus;
 
 public record ReservationResponse(
         Long id,
-        String customerName,
+        String nombreCliente,
         LocalDate date,
         LocalTime time,
         String service,

@@ -1,5 +1,7 @@
 package com.juniorstone.reservation_backend.service.impl;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,20 +32,31 @@ public class ReservationServiceImpl implements ReservationService {
      * {@inheritDoc}
      */
     @Override
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> findAll() {
+        return reservationRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     @Transactional
     public ReservationResponse create(CreateReservationRequest request) {
         if (reservationRepository.existsByDateAndTimeAndStatusNot(
-                request.date(), request.time(), ReservationStatus.CANCELADO)) {
+                request.date(), request.time(), ReservationStatus.CANCELADA)) {
             throw new ReservationBusinessRuleException(
                     "Ya existe una reserva para la fecha y hora indicadas");
         }
 
         var entity = new ReservationEntity(
-                request.customerName(),
+                request.nombreCliente(),
                 request.date(),
                 request.time(),
                 request.service(),
-                ReservationStatus.PENDIENTE);
+                ReservationStatus.ACTIVA);
 
         return toResponse(reservationRepository.save(entity));
     }
@@ -57,18 +70,18 @@ public class ReservationServiceImpl implements ReservationService {
         var entity = reservationRepository.findById(id)
                 .orElseThrow(() -> new ReservationNotFoundException(id));
 
-        if (entity.getStatus() == ReservationStatus.CANCELADO) {
+        if (entity.getStatus() == ReservationStatus.CANCELADA) {
             throw new ReservationBusinessRuleException("La reserva ya está cancelada");
         }
 
-        entity.setStatus(ReservationStatus.CANCELADO);
+        entity.setStatus(ReservationStatus.CANCELADA);
         return toResponse(reservationRepository.save(entity));
     }
 
-    private static ReservationResponse toResponse(ReservationEntity entity) {
+    private ReservationResponse toResponse(ReservationEntity entity) {
         return new ReservationResponse(
                 entity.getId(),
-                entity.getCustomerName(),
+                entity.getNombreCliente(),
                 entity.getDate(),
                 entity.getTime(),
                 entity.getService(),

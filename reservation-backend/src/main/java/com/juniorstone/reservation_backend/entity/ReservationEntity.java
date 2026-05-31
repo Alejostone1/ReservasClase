@@ -17,7 +17,7 @@ public class ReservationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String customerName;
+    private String nombreCliente;
     private LocalDate date;
     private LocalTime time;
     private String service;
@@ -28,8 +28,8 @@ public class ReservationEntity {
     }
 
 
-    public ReservationEntity(String customerName, LocalDate date, LocalTime time, String service, ReservationStatus status) {
-        this.customerName = customerName;
+    public ReservationEntity(String nombreCliente, LocalDate date, LocalTime time, String service, ReservationStatus status) {
+        this.nombreCliente = nombreCliente;
         this.date = date;
         this.time = time;
         this.service = service;
@@ -44,12 +44,12 @@ public class ReservationEntity {
         this.id = id;
     }
 
-    public String getCustomerName() {
-        return customerName;
+    public String getNombreCliente() {
+        return nombreCliente;
     }
 
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
+    public void setNombreCliente(String nombreCliente) {
+        this.nombreCliente = nombreCliente;
     }
 
     public LocalDate getDate() {

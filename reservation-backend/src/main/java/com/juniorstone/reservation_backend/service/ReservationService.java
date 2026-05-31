@@ -1,11 +1,20 @@
 package com.juniorstone.reservation_backend.service;
 
+import java.util.List;
+
 import com.juniorstone.reservation_backend.dto.request.CreateReservationRequest;
 import com.juniorstone.reservation_backend.dto.response.ReservationResponse;
 import com.juniorstone.reservation_backend.exception.ReservationBusinessRuleException;
 import com.juniorstone.reservation_backend.exception.ReservationNotFoundException;
 
 public interface ReservationService {
+
+    /**
+     * Retrieves all reservations from the database.
+     *
+     * @return list of all reservations
+     */
+    List<ReservationResponse> findAll();
 
     /**
      * Creates a reservation when no other active reservation exists for the same date and time.

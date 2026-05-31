@@ -1,0 +1,274 @@
+---
+description: Convenciones Angular y TypeScript para reservation-frontend (ReservaT)
+alwaysApply: true
+---
+
+# Angular — ReservaT (reservation-frontend)
+
+Stack: **Angular 18+**, **TypeScript**, **HttpClient**, **Standalone Components**, **Reactive Forms**. Código del frontend en `reservation-frontend/`.
+
+## Idioma y nombres
+
+- Clases, interfaces, métodos, atributos, constantes: **inglés** (`ReservationService`, `getReservations`, `customerName`).
+- Comentarios JSDoc: inglés, frases completas.
+- Mensajes de UI expuestos al usuario: según contrato del producto (pueden ser español si el dominio lo define).
+- Nombres de archivos: kebab-case (`reservation.service.ts`, `reservation-list.component.ts`).
+
+## JSDoc
+
+Todo **método público** en servicios y componentes debe tener JSDoc actualizado.
+
+```typescript
+/**
+ * Retrieves all reservations from the backend.
+ *
+ * @returns Observable emitting the list of reservations
+ */
+getReservations(): Observable<Reservation[]> {
+  return this.http.get<Reservation[]>(this.apiUrl);
+}
+```
+
+## Estructura del proyecto
+
+```
+ReservaT/
+└── reservation-frontend/
+    ├── package.json
+    ├── angular.json
+    ├── tsconfig.json
+    ├── src/
+    │   ├── main.ts
+    │   ├── index.html
+    │   ├── styles.scss
+    │   ├── app/
+    │   │   ├── app.config.ts           # Application config with providers
+    │   │   ├── app.routes.ts           # Route definitions
+    │   │   ├── app.component.ts        # Root component
+    │   │   ├── app.component.html
+    │   │   ├── app.component.scss
+    │   │   ├── models/                 # TypeScript interfaces
+    │   │   │   └── reservation.ts
+    │   │   ├── services/               # Angular services
+    │   │   │   └── reservation.service.ts
+    │   │   ├── components/             # Standalone components
+    │   │   │   ├── reservation-list/
+    │   │   │   │   ├── reservation-list.component.ts
+    │   │   │   │   ├── reservation-list.component.html
+    │   │   │   │   └── reservation-list.component.scss
+    │   │   │   ├── reservation-form/
+    │   │   │   │   ├── reservation-form.component.ts
+    │   │   │   │   ├── reservation-form.component.html
+    │   │   │   │   └── reservation-form.component.scss
+    │   │   │   └── toast/
+    │   │   │       ├── toast.component.ts
+    │   │   │       ├── toast.component.html
+    │   │   │       └── toast.component.scss
+    │   │   └── interceptors/           # HTTP interceptors (optional)
+    │   ├── environments/
+    │   │   ├── environment.ts
+    │   │   └── environment.prod.ts
+    │   └── assets/
+    └── src/test/
+        ├── app/
+        │   ├── services/
+        │   │   └── reservation.service.spec.ts
+        │   └── components/
+        │       ├── reservation-list/
+        │       │   └── reservation-list.component.spec.ts
+        │       └── reservation-form/
+        │           └── reservation-form.component.spec.ts
+```
+
+## Standalone Components
+
+- Todos los componentes deben ser **standalone** (`@Component({ standalone: true })`).
+- Importar dependencias directamente en el componente (otros componentes, pipes, directivas).
+- No usar NgModule tradicional.
+
+```typescript
+@Component({
+  selector: 'app-reservation-list',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './reservation-list.component.html',
+  styleUrls: ['./reservation-list.component.scss']
+})
+export class ReservationListComponent implements OnInit {
+  // ...
+}
+```
+
+## Services
+
+- Usar `@Injectable({ providedIn: 'root' })` para servicios singleton.
+- Inyectar `HttpClient` para comunicación con backend.
+- Retornar `Observable<T>` para operaciones asíncronas.
+- Usar operadores de RxJS cuando sea necesario (`map`, `catchError`, `tap`).
+- Manejar errores apropiadamente y retornar observables que emitan errores.
+
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class ReservationService {
+  private apiUrl = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  getReservations(): Observable<Reservation[]> {
+    return this.http.get<Reservation[]>(`${this.apiUrl}/reservations`);
+  }
+}
+```
+
+## Reactive Forms
+
+- Usar **Reactive Forms** para formularios complejos.
+- Importar `ReactiveFormsModule` en componentes con formularios.
+- Usar `FormGroup`, `FormControl`, `FormBuilder` o `NonNullableFormBuilder`.
+- Validar campos con validadores sincrónicos y asíncronos.
+- Tipar los formularios con `FormGroup` typed cuando sea posible.
+
+```typescript
+export class ReservationFormComponent implements OnInit {
+  reservationForm: FormGroup;
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.reservationForm = this.fb.group({
+      customerName: ['', [Validators.required, Validators.minLength(2)]],
+      date: ['', [Validators.required]],
+      time: ['', [Validators.required]],
+      service: ['', [Validators.required]]
+    });
+  }
+}
+```
+
+## Models/Interfaces
+
+- Definir interfaces TypeScript para estructuras de datos.
+- Colocar en `src/app/models/`.
+- Usar nombres descriptivos en inglés.
+
+```typescript
+export interface Reservation {
+  id: number;
+  customerName: string;
+  date: string;
+  time: string;
+  service: string;
+  status: 'ACTIVA' | 'CANCELADA';
+}
+```
+
+## Lifecycle Hooks
+
+- Implementar hooks de ciclo de vida solo cuando sea necesario.
+- Usar `ngOnInit` para inicialización después de que el componente esté construido.
+- Usar `ngOnDestroy` para limpiar subscriptions (usar `takeUntil` o `AsyncPipe`).
+
+## HTTP y Error Handling
+
+- Usar `HttpClient` para todas las peticiones HTTP.
+- Manejar errores con `catchError` y retornar observables apropiados.
+- Mostrar mensajes de error al usuario a través de componentes toast.
+- No usar `any` en tipado de respuestas HTTP.
+
+## Environment Variables
+
+- Usar `environment.ts` para configuración por ambiente.
+- Definir URL del backend en `environment.ts`.
+- No hardcodear URLs en servicios.
+
+```typescript
+// environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://127.0.0.1:8080/api'
+};
+```
+
+## Routing
+
+- Definir rutas en `app.routes.ts`.
+- Usar `provideRouter` en `app.config.ts`.
+- Proteger rutas con guards cuando sea necesario (auth).
+- Usar rutas lazy-loaded para módulos grandes (si aplica).
+
+```typescript
+export const routes: Routes = [
+  { path: '', redirectTo: '/reservations', pathMatch: 'full' },
+  { path: 'reservations', component: ReservationListComponent },
+  { path: 'reservations/new', component: ReservationFormComponent }
+];
+```
+
+## CSS/SCSS
+
+- Usar SCSS para estilos.
+- Mantener estilos específicos del componente en su archivo `.scss`.
+- Usar variables CSS para consistencia.
+- Evitar estilos globales excesivos.
+
+## Testing
+
+- Escribir tests unitarios para servicios y componentes.
+- Usar `Jest` o `Karma` según configuración del proyecto.
+- Mockear `HttpClient` en tests de servicios.
+- Testear lógica de componentes, no solo template.
+
+## Buenas prácticas de Angular
+
+- Usar `AsyncPipe` para manejar subscriptions en templates cuando sea posible.
+- Evitar lógica compleja en templates (mover a componente).
+- Usar `ChangeDetectionStrategy.OnPush` para optimización cuando sea apropiado.
+- No usar `any` en tipado; usar interfaces o tipos específicos.
+- Usar `const` para variables que no cambian.
+- Preferir `readonly` para arrays que no deben mutarse.
+- Usar trackBy en *ngFor para optimización.
+
+## Qué evitar
+
+- Lógica de negocio en componentes (delegar a servicios).
+- Uso de `any` para tipado.
+- Subscriptions sin cleanup (memory leaks).
+- Estilos globales excesivos.
+- Componentes no standalone (a menos que sea necesario).
+- Hardcodear URLs de API.
+- Validaciones solo en frontend (siempre validar en backend también).
+- Uso de jQuery o manipulación directa del DOM.
+
+## Ejemplo de componente standalone
+
+```typescript
+@Component({
+  selector: 'app-reservation-list',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './reservation-list.component.html',
+  styleUrls: ['./reservation-list.component.scss']
+})
+export class ReservationListComponent implements OnInit {
+  reservations: Reservation[] = [];
+  loading = false;
+
+  constructor(private reservationService: ReservationService) {}
+
+  ngOnInit(): void {
+    this.loadReservations();
+  }
+
+  loadReservations(): void {
+    this.loading = true;
+    this.reservationService.getReservations()
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
+        next: (data) => this.reservations = data,
+        error: (error) => console.error('Error loading reservations', error)
+      });
+  }
+}
+```

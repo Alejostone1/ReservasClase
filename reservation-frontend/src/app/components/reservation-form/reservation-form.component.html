@@ -1,0 +1,121 @@
+<section class="page">
+  <header class="page-header">
+    <div class="page-heading">
+      <p class="page-eyebrow">Nueva cita</p>
+      <h1>Nueva Reserva</h1>
+      <p class="page-subtitle">Completa los datos para agendar un servicio.</p>
+    </div>
+    <a routerLink="/reservations" class="btn btn-secondary">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Volver a la lista
+    </a>
+  </header>
+
+  <div class="form-card">
+    <form [formGroup]="reservationForm" (ngSubmit)="onSubmit()">
+      <div class="form-grid">
+        <div class="form-group form-group-full">
+          <label for="nombreCliente">Nombre del Cliente *</label>
+          <input
+            id="nombreCliente"
+            type="text"
+            formControlName="nombreCliente"
+            class="form-control"
+            [class.is-invalid]="hasError('nombreCliente')"
+            placeholder="Ej. María González"
+          />
+          @if (hasError('nombreCliente')) {
+            <div class="error-message">
+              {{ getErrorMessage('nombreCliente') }}
+            </div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="date">Fecha *</label>
+          <input
+            id="date"
+            type="date"
+            formControlName="date"
+            class="form-control"
+            [class.is-invalid]="hasError('date')"
+            [min]="today"
+          />
+          @if (hasError('date')) {
+            <div class="error-message">
+              {{ getErrorMessage('date') }}
+            </div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="time">Hora *</label>
+          <input
+            id="time"
+            type="time"
+            formControlName="time"
+            class="form-control"
+            [class.is-invalid]="hasError('time')"
+          />
+          @if (hasError('time')) {
+            <div class="error-message">
+              {{ getErrorMessage('time') }}
+            </div>
+          }
+        </div>
+
+        <div class="form-group form-group-full">
+          <label for="service">Servicio *</label>
+          <select
+            id="service"
+            formControlName="service"
+            class="form-control"
+            [class.is-invalid]="hasError('service')"
+          >
+            <option value="">Seleccione un servicio</option>
+            @for (service of services; track service) {
+              <option [value]="service">{{ service }}</option>
+            }
+          </select>
+          @if (hasError('service')) {
+            <div class="error-message">
+              {{ getErrorMessage('service') }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="resetForm()"
+          [disabled]="submitting"
+        >
+          Limpiar
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="submitting || reservationForm.invalid"
+        >
+          @if (submitting) {
+            <span class="spinner"></span>
+            Guardando...
+          } @else {
+            Crear Reserva
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <app-toast
+    [message]="toastMessage"
+    [isVisible]="showToast"
+    [type]="'error'"
+    (hide)="hideToast()"
+  ></app-toast>
+</section>

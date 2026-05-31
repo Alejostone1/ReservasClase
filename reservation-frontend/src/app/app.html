@@ -1,0 +1,38 @@
+<div class="app-shell">
+  <header class="app-header">
+    <div class="header-inner">
+      <a routerLink="/reservations" class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.75"/>
+            <path d="M3 10h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+            <circle cx="12" cy="15" r="2" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <strong>ReservaT</strong>
+          <small>Sistema de reservas</small>
+        </span>
+      </a>
+
+      <nav class="app-nav">
+        <a routerLink="/reservations" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          Reservas
+        </a>
+        <a routerLink="/reservations/new" routerLinkActive="active" class="nav-cta">
+          + Nueva reserva
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="app-footer">
+    <span>ReservaT</span>
+    <span class="dot" aria-hidden="true"></span>
+    <span>Gestión de citas</span>
+  </footer>
+</div>

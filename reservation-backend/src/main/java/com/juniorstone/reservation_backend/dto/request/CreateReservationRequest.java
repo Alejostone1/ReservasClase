@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CreateReservationRequest(
-        @NotBlank String customerName,
+        @NotBlank String nombreCliente,
         @NotNull @FutureOrPresent LocalDate date,
         @NotNull LocalTime time,
         @NotBlank String service) {
